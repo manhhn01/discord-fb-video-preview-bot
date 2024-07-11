@@ -28,7 +28,7 @@ impl EventHandler for Handler {
 
             let caps = re.captures(&msg.content).unwrap();
             let video_url = caps.get(0).unwrap().as_str();
-            println!("Mathcing video URL: {}", video_url);
+            println!("Matching video URL: {}", video_url);
 
             let request_client = Client::new();
 
