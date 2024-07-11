@@ -19,7 +19,7 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        let re = Regex::new(r"https:\/\/www\.facebook\.com[^\s]+").unwrap();
+        let re = Regex::new(r"https:\/\/www\.(facebook|instagram)\.com[^\s]+").unwrap();
 
         if re.is_match(&msg.content) {
             msg.react(&ctx.http, ReactionType::Unicode("👀".to_string()))
@@ -63,7 +63,17 @@ impl EventHandler for Handler {
 
             if video_info_res.status().is_success() {
                 let video_info_json: serde_json::Value = video_info_res.json().await.unwrap();
-                let media_url = video_info_json["medias"][1]["url"].as_str().unwrap();
+
+                let media_url = video_info_json["medias"]
+                    .as_array()
+                    .unwrap()
+                    .last()
+                    .unwrap()["url"]
+                    .as_str()
+                    .unwrap();
+
+                println!("Video URL: {}", media_url);
+
                 let fb_media_response = request_client.get(media_url).send().await.unwrap();
                 let media_bytes = fb_media_response.bytes().await.unwrap();
                 let media_content =
