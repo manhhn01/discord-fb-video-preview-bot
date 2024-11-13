@@ -434,6 +434,7 @@ dependencies = [
 name = "facebook-video-preview-discord-bot"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "dotenv",
  "regex",
  "reqwest 0.12.5",

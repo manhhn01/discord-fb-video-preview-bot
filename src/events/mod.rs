@@ -1,3 +1,4 @@
+use base64::Engine;
 use reqwest::Client;
 
 use serenity::all::{CreateAttachment, CreateMessage, ReactionType};
@@ -49,9 +50,13 @@ impl EventHandler for Handler {
             .await
             .unwrap();
 
+            let magic_string = "L1050LYWlvLWRs";
+            let video_url_base64 = base64::engine::general_purpose::STANDARD.encode(video_url);
+
             let form_data = [
                 ("url", video_url.to_string()),
                 ("token", snapvideo_token.to_string()),
+                ("hash", format!("{}{}", video_url_base64, magic_string)),
             ];
 
             let video_info_res = request_client
