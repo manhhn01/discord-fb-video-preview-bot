@@ -13,6 +13,12 @@ use tokio::task::spawn_blocking;
 
 pub struct Handler;
 
+fn calculate_hash(url: &str, salt: &str) -> String {
+    let encoded_url = base64::engine::general_purpose::STANDARD.encode(url);
+    let encoded_salt = base64::engine::general_purpose::STANDARD.encode(salt);
+    format!("{}L{}L{}", encoded_url, url.len() + 1_000, encoded_salt)
+}
+
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, _ctx: Context, data_about_bot: serenity::model::prelude::Ready) {
@@ -50,13 +56,10 @@ impl EventHandler for Handler {
             .await
             .unwrap();
 
-            let magic_string = "L1050LYWlvLWRs";
-            let video_url_base64 = base64::engine::general_purpose::STANDARD.encode(video_url);
-
             let form_data = [
                 ("url", video_url.to_string()),
                 ("token", snapvideo_token.to_string()),
-                ("hash", format!("{}{}", video_url_base64, magic_string)),
+                ("hash", calculate_hash(video_url, "aio-dl")),
             ];
 
             let video_info_res = request_client
