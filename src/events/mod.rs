@@ -10,6 +10,7 @@ use regex::Regex;
 
 use scraper::{Html, Selector};
 use tokio::task::spawn_blocking;
+use url::Url;
 
 pub struct Handler;
 
@@ -26,7 +27,7 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        let re = Regex::new(r"https:\/\/www\.(facebook|instagram)\.com[^\s]+").unwrap();
+        let re = Regex::new(r"https:\/\/.+\.(facebook|instagram|tiktok)\.com[^\s]+").unwrap();
 
         if re.is_match(&msg.content) {
             msg.react(&ctx.http, ReactionType::Unicode("👀".to_string()))
@@ -72,13 +73,46 @@ impl EventHandler for Handler {
             if video_info_res.status().is_success() {
                 let video_info_json: serde_json::Value = video_info_res.json().await.unwrap();
 
-                let media_url = video_info_json["medias"]
+                let mut media_url = video_info_json["medias"]
                     .as_array()
                     .unwrap()
-                    .last()
+                    .iter()
+                    .rev()
+                    .find(|media| media["extension"] == "mp4")
                     .unwrap()["url"]
                     .as_str()
-                    .unwrap();
+                    .unwrap()
+                    .to_string();
+
+                if media_url.contains("download-local") {
+                    let owned_media_url = media_url.to_string();
+                    match Url::parse(&owned_media_url) {
+                        Ok(url) => {
+                            let download_url = url
+                                .query_pairs()
+                                .find(|(key, _)| key == "url")
+                                .map(|(_, value)| value.into_owned());
+
+                            if let Some(download_url) = download_url {
+                                println!("Local Download URL: {}", download_url);
+                                media_url = download_url;
+                            }
+                        }
+                        Err(err) => {
+                            println!("Unable to parse URL {}. Err {:?}", owned_media_url, err);
+                            msg.channel_id
+                                .send_message(
+                                    &ctx.http,
+                                    CreateMessage::new()
+                                        .reference_message(&msg)
+                                        .content("Unable to send video."),
+                                )
+                                .await
+                                .unwrap();
+                            return;
+                        }
+                    }
+                }
 
                 println!("Video URL: {}", media_url);
 
