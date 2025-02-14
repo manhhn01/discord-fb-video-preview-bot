@@ -41,7 +41,7 @@ impl EventHandler for Handler {
             let request_client = Client::new();
 
             let resp = request_client
-                .get("https://snapvideo.io/en")
+                .get("https://snapvideo.io")
                 .send()
                 .await
                 .unwrap();
