@@ -41,7 +41,7 @@ impl EventHandler for Handler {
             let request_client = Client::new();
 
             let resp = request_client
-                .get("https://snapvideo.io")
+                .get("https://snapvideo.co")
                 .send()
                 .await
                 .unwrap();
@@ -64,7 +64,7 @@ impl EventHandler for Handler {
             ];
 
             let video_info_res = request_client
-                .post("https://snapvideo.io/wp-json/aio-dl/video-data/")
+                .post("https://snapvideo.co/wp-json/aio-dl/video-data/")
                 .form(&form_data)
                 .send()
                 .await
@@ -100,15 +100,11 @@ impl EventHandler for Handler {
                         }
                         Err(err) => {
                             println!("Unable to parse URL {}. Err {:?}", owned_media_url, err);
-                            msg.channel_id
-                                .send_message(
-                                    &ctx.http,
-                                    CreateMessage::new()
-                                        .reference_message(&msg)
-                                        .content("Unable to send video."),
-                                )
-                                .await
-                                .unwrap();
+
+                            let _ = msg
+                                .react(&ctx.http, ReactionType::Unicode("👎".to_string()))
+                                .await;
+
                             return;
                         }
                     }
@@ -132,28 +128,20 @@ impl EventHandler for Handler {
                 {
                     println!("Unable to send video: {why:?}");
 
-                    msg.channel_id
-                        .send_message(
-                            &ctx.http,
-                            CreateMessage::new()
-                                .reference_message(&msg)
-                                .content("Unable to send video."),
-                        )
-                        .await
-                        .unwrap();
+                    let _ = msg
+                        .react(&ctx.http, ReactionType::Unicode("👎".to_string()))
+                        .await;
                 }
             } else {
-                println!("Unable to get video URL {}", video_info_res.status());
+                println!(
+                    "Unable to get video URL {}. Detail: {}",
+                    video_info_res.status(),
+                    video_info_res.text().await.unwrap_or_default()
+                );
 
-                msg.channel_id
-                    .send_message(
-                        &ctx.http,
-                        CreateMessage::new()
-                            .reference_message(&msg)
-                            .content("Unable to send video."),
-                    )
-                    .await
-                    .unwrap();
+                let _ = msg
+                    .react(&ctx.http, ReactionType::Unicode("👎".to_string()))
+                    .await;
             }
         }
     }
